@@ -1,9 +1,8 @@
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
-import math
 
-# img = './Image/circle.png'
+
 img = './Image/lenna.png'
 
 original_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
@@ -19,8 +18,6 @@ height = original_img.shape[0]
 width = original_img.shape[1]
 
 sobel_filter = np.matrix([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]])
-# sobel_filter_gy = np.matrix([[-1, -2, -1], [0, 0, 0], [+1, +2, +1]])
-# sobel_filter_gxy = sobel_filter_gx + sobel_filter_gy
 
 for h in range(1, height - 1):
     for w in range(1, width - 1):
@@ -58,9 +55,7 @@ for h in range(1, height - 1):
                 img_gradient_sobel_y.itemset(i, j, sobel_gy_local_matrix[i - h + 1, j - w + 1])
                 img_gradient_sobel_xy.itemset(i, j, sobel_gxy_local_matrix[i - h + 1, j - w + 1])
 
-        # angle = math.tanh(gradient_direction_x / gradient_direction_y)
-        # magnitude = math.sqrt(math.pow(gradient_direction_x, 2) + math.pow(gradient_direction_y, 2))
-
+# UI
 images = [original_img, img_gradient_diff_x, img_gradient_diff_y,
           img_gradient_sobel_x, img_gradient_sobel_y, img_gradient_sobel_xy]
 titles = ['original', 'difference x', 'difference y', 'sobel x (3*3)', 'sobel y (3*3)', 'sobel x + y']
