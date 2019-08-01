@@ -22,8 +22,8 @@ sobel_filter = np.matrix([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]])
 # sobel_filter_gy = np.matrix([[-1, -2, -1], [0, 0, 0], [+1, +2, +1]])
 # sobel_filter_gxy = sobel_filter_gx + sobel_filter_gy
 
-for w in range(1, width - 1):
-    for h in range(1, height - 1):
+for h in range(1, height - 1):
+    for w in range(1, width - 1):
 
         # Calculate simple brightness differences in the x-axis & y-axis direction
         brightness_diff_x = 255 - original_img[h, w + 1] + original_img[h, w - 1]
