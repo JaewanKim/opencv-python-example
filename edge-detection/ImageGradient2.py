@@ -57,26 +57,6 @@ for h in range(1, height - 1):
                 img_gradient_sobel_xy.itemset(i, j, 128 + math.sqrt(math.pow(sobel_gx_local_matrix[i - h + 1, j - w + 1], 2) + math.pow(sobel_gy_local_matrix[i - h + 1, j - w + 1], 2)))
 
 
-# Set pixel value greater than threshold
-threshold_sobel = 154
-for h in range(0, height):
-    for w in range(0, width):
-        if img_gradient_sobel_x[h, w] > threshold_sobel:
-            img_gradient_sobel_x.itemset(h, w, 255)
-        else:
-            img_gradient_sobel_x.itemset(h, w, 0)
-
-        if img_gradient_sobel_y[h, w] > threshold_sobel:
-            img_gradient_sobel_y.itemset(h, w, 255)
-        else:
-            img_gradient_sobel_y.itemset(h, w, 0)
-
-        if img_gradient_sobel_xy[h, w] > threshold_sobel:
-            img_gradient_sobel_xy.itemset(h, w, 255)
-        else:
-            img_gradient_sobel_xy.itemset(h, w, 0)
-
-
 # Smoothing
 for h in range(1, height - 1):
     for w in range(1, width - 1):
@@ -100,9 +80,25 @@ for h in range(1, height - 1):
                 smooth_img_xy.itemset(i, j, 128 + math.sqrt(math.pow(gradient_avg_x, 2) + math.pow(gradient_avg_y, 2)))
 
 
-threshold_smooth = 154
+# Set pixel value greater than threshold
+threshold_sobel = 154
+threshold_smooth = 192
 for h in range(0, height):
     for w in range(0, width):
+        if img_gradient_sobel_x[h, w] > threshold_sobel:
+            img_gradient_sobel_x.itemset(h, w, 255)
+        else:
+            img_gradient_sobel_x.itemset(h, w, 0)
+
+        if img_gradient_sobel_y[h, w] > threshold_sobel:
+            img_gradient_sobel_y.itemset(h, w, 255)
+        else:
+            img_gradient_sobel_y.itemset(h, w, 0)
+
+        if img_gradient_sobel_xy[h, w] > threshold_sobel:
+            img_gradient_sobel_xy.itemset(h, w, 255)
+        else:
+            img_gradient_sobel_xy.itemset(h, w, 0)
         #
         if smooth_img_x[h, w] > threshold_smooth:
             smooth_img_x.itemset(h, w, 255)
@@ -126,7 +122,7 @@ images = [#original_img, img_gradient_diff_x, img_gradient_diff_y,
           smooth_img_x, smooth_img_y, smooth_img_xy]
 titles = [#'original', 'difference x', 'difference y',
           'sobel x (3*3) th=154', 'sobel y (3*3) th=154', 'sobel xy (3*3) th=154',
-          'smooth x th=154', 'smooth y th=154', 'smooth xy th=154']
+          'smooth x th=192', 'smooth y th=192', 'smooth xy th=192']
 
 for i in range(0, 6):
     plt.subplot(2, 3, i + 1), plt.imshow(images[i], cmap='gray', interpolation='bicubic'), plt.title([titles[i]])
