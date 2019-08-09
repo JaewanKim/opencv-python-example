@@ -2,129 +2,99 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 import math
-
-img = './Image/lenna.png'
-
-original_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-
-img_gradient_diff_x = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-img_gradient_diff_y = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-
-img_gradient_sobel_x = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-img_gradient_sobel_y = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-img_gradient_sobel_xy = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-
-smooth_img_x = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-smooth_img_y = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-smooth_img_xy = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-
-height = original_img.shape[0]
-width = original_img.shape[1]
-
-sobel_filter = np.matrix([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]])
-
-for h in range(1, height - 1):
-    for w in range(1, width - 1):
-
-        # Calculate simple brightness differences in the x-axis & y-axis direction
-        brightness_diff_x = original_img[h, w + 1] - original_img[h, w - 1]
-        brightness_diff_y = original_img[h + 1, w] - original_img[h - 1, w]
-
-        img_gradient_diff_x.itemset(h, w, 128 + brightness_diff_x)
-        img_gradient_diff_y.itemset(h, w, 128 + brightness_diff_y)
-
-        # Matrix operation using sobel filter (3 * 3)
-        # Get pixel values from the original image for each axis
-        local_matrix_x = np.matrix([
-                                [original_img[h - 1, w - 1], original_img[h, w - 1], original_img[h + 1, w - 1]],
-                                [original_img[h - 1, w], original_img[h, w], original_img[h + 1, w + 1]],
-                                [original_img[h - 1, w + 1], original_img[h + 1, w + 1], original_img[h + 1, w + 1]]])
-
-        local_matrix_y = np.matrix([
-                                [original_img[h - 1, w - 1], original_img[h - 1, w], original_img[h - 1, w + 1]],
-                                [original_img[h, w - 1], original_img[h, w], original_img[h, w + 1]],
-                                [original_img[h + 1, w - 1], original_img[h + 1, w], original_img[h + 1, w + 1]]])
-
-        # Matrix operation
-        sobel_gx_local_matrix = np.dot(sobel_filter, local_matrix_x)
-        sobel_gy_local_matrix = np.dot(sobel_filter, local_matrix_y)
-
-        # Save Image Gradient by pixel
-        for i in range(h - 1, h + 1):
-            for j in range(w - 1, w + 1):
-                img_gradient_sobel_x.itemset(i, j, 128 + sobel_gx_local_matrix[i - h + 1, j - w + 1])
-                img_gradient_sobel_y.itemset(i, j, 128 + sobel_gy_local_matrix[i - h + 1, j - w + 1])
-                img_gradient_sobel_xy.itemset(i, j, 128 + math.sqrt(math.pow(sobel_gx_local_matrix[i - h + 1, j - w + 1], 2) + math.pow(sobel_gy_local_matrix[i - h + 1, j - w + 1], 2)))
+import random
 
 
-# Smoothing
-for h in range(1, height - 1):
-    for w in range(1, width - 1):
+class Main:
 
-        gradient_avg_x = 0
-        gradient_avg_y = 0
+    def __init__(self):
 
-        # Get Average Vector
-        for i in range(h - 1, h + 1):
-            for j in range(w - 1, w + 1):
-                gradient_avg_x += img_gradient_sobel_x[i, j]
-                gradient_avg_y += img_gradient_sobel_y[i, j]
+        self.img = './Image/lenna.png'
+        self.original_img = cv2.imread(self.img, cv2.IMREAD_GRAYSCALE)
+        self.white_noise = cv2.imread(self.img, cv2.IMREAD_GRAYSCALE)
 
-        gradient_avg_x /= 9
-        gradient_avg_y /= 9
+        self.height = self.original_img.shape[0]
+        self.width = self.original_img.shape[1]
 
-        for i in range(h - 1, h + 1):
-            for j in range(w - 1, w + 1):
-                smooth_img_x.itemset(i, j, 128 + gradient_avg_x)
-                smooth_img_y.itemset(i, j, 128 + gradient_avg_y)
-                smooth_img_xy.itemset(i, j, 128 + math.sqrt(math.pow(gradient_avg_x, 2) + math.pow(gradient_avg_y, 2)))
+        self.gradient_vector_field = [[[0, 0] for col in range(self.height)] for row in range(self.width)]
+        self.gradient_vector_field_smooth = [[[0, 0] for col2 in range(self.height)] for row2 in range(self.width)]
+
+        self.sobel_filter_x = np.array([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]])
+        self.sobel_filter_y = np.array([[-1, -2, -1], [0, 0, 0], [+1, +2, +1]])
+
+        for h in range(0, self.height):
+            for w in range(0, self.width):
+                self.white_noise[h, w] = random.randrange(0, 255)
+
+    def __main__(self):
+
+        # Image Gradient - Sobel
+        max_vector_magnitude = 255 * math.sqrt(2)
+        for h in range(1, self.height-1):
+            for w in range(1, self.width-1):
+
+                # gx = original_img[h, w + 1] - original_img[h, w - 1]
+                # gy = original_img[h + 1, w] - original_img[h - 1, w]
+
+                local_matrix = np.array([
+                    [self.original_img[h - 1, w - 1], self.original_img[h, w - 1], self.original_img[h + 1, w - 1]],
+                    [self.original_img[h - 1, w], self.original_img[h, w], self.original_img[h + 1, w + 1]],
+                    [self.original_img[h - 1, w + 1], self.original_img[h + 1, w + 1], self.original_img[h + 1, w + 1]]
+                ])
+
+                gx_local_matrix = np.matmul(self.sobel_filter_x, local_matrix)
+                gy_local_matrix = np.matmul(local_matrix, self.sobel_filter_y)
+
+                gx = np.asarray(gx_local_matrix)[1][1]
+                gy = np.asarray(gy_local_matrix)[1][1]
+
+                self.gradient_vector_field[h][w][0] = gx / max_vector_magnitude
+                self.gradient_vector_field[h][w][1] = gy / max_vector_magnitude
+
+        # Smoothing
+        for h in range(1, self.height - 1):
+            for w in range(1, self.width - 1):
+
+                gradient_avg_x = 0
+                gradient_avg_y = 0
+
+                # Get Average Vector
+                for i in range(h - 1, h + 1):
+                    for j in range(w - 1, w + 1):
+                        gradient_avg_x += self.gradient_vector_field[h][w][0]
+                        gradient_avg_y += self.gradient_vector_field[h][w][1]
+
+                gradient_avg_x /= 9
+                gradient_avg_y /= 9
+
+                self.gradient_vector_field_smooth[h][w] = [gradient_avg_y, gradient_avg_x]
+
+        # UI
+        x, y = np.meshgrid(np.arange(0, self.width), np.arange(0, self.height))
+        x_shape = x.shape
+
+        u = np.zeros(x_shape)
+        v = np.zeros(x_shape)
+
+        for h in range(1, self.height - 1):
+            for w in range(1, self.width - 1):
+                u[w, h] = self.gradient_vector_field[h][w][0]
+                v[w, h] = self.gradient_vector_field[h][w][1]
+                # u[w, h] = self.gradient_vector_field_smooth[h][w][0]
+                # v[w, h] = self.gradient_vector_field_smooth[h][w][1]
+
+        fig, ax = plt.subplots()
+        q = ax.quiver(x, y, u, v, units='xy', scale=0.1, color='black')
+        plt.grid()
+        ax.set_aspect('equal')
+
+        plt.xlim(0, self.width), plt.ylim(0, self.height)
+        plt.title('non-smooth', fontsize=10), plt.savefig('non-smooth.png', bbox_inches='tight')
+        # plt.title('smooth', fontsize=10), plt.savefig('smooth.png', bbox_inches='tight')
+
+        plt.show()
 
 
-# Set pixel value greater than threshold
-threshold_sobel = 154
-threshold_smooth = 192
-for h in range(0, height):
-    for w in range(0, width):
-        if img_gradient_sobel_x[h, w] > threshold_sobel:
-            img_gradient_sobel_x.itemset(h, w, 255)
-        else:
-            img_gradient_sobel_x.itemset(h, w, 0)
+if __name__ == '__main__':
+    Main().__main__()
 
-        if img_gradient_sobel_y[h, w] > threshold_sobel:
-            img_gradient_sobel_y.itemset(h, w, 255)
-        else:
-            img_gradient_sobel_y.itemset(h, w, 0)
-
-        if img_gradient_sobel_xy[h, w] > threshold_sobel:
-            img_gradient_sobel_xy.itemset(h, w, 255)
-        else:
-            img_gradient_sobel_xy.itemset(h, w, 0)
-        #
-        if smooth_img_x[h, w] > threshold_smooth:
-            smooth_img_x.itemset(h, w, 255)
-        else:
-            smooth_img_x.itemset(h, w, 0)
-
-        if smooth_img_y[h, w] > threshold_smooth:
-            smooth_img_y.itemset(h, w, 255)
-        else:
-            smooth_img_y.itemset(h, w, 0)
-
-        if smooth_img_xy[h, w] > threshold_smooth:
-            smooth_img_xy.itemset(h, w, 255)
-        else:
-            smooth_img_xy.itemset(h, w, 0)
-
-
-# UI
-images = [#original_img, img_gradient_diff_x, img_gradient_diff_y,
-          img_gradient_sobel_x, img_gradient_sobel_y, img_gradient_sobel_xy,
-          smooth_img_x, smooth_img_y, smooth_img_xy]
-titles = [#'original', 'difference x', 'difference y',
-          'sobel x (3*3) th=154', 'sobel y (3*3) th=154', 'sobel xy (3*3) th=154',
-          'smooth x th=192', 'smooth y th=192', 'smooth xy th=192']
-
-for i in range(0, 6):
-    plt.subplot(2, 3, i + 1), plt.imshow(images[i], cmap='gray', interpolation='bicubic'), plt.title([titles[i]])
-    plt.xticks([]), plt.yticks([])
-plt.show()

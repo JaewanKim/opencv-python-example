@@ -21,7 +21,8 @@ smooth_img_xy = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 height = original_img.shape[0]
 width = original_img.shape[1]
 
-sobel_filter = np.matrix([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]])
+sobel_filter_x = np.matrix([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]])
+sobel_filter_y = np.matrix([[-1, -2, -1], [0, 0, 0], [+1, +2, +1]])
 
 for h in range(1, height - 1):
     for w in range(1, width - 1):
@@ -30,24 +31,19 @@ for h in range(1, height - 1):
         brightness_diff_x = original_img[h, w + 1] - original_img[h, w - 1]
         brightness_diff_y = original_img[h + 1, w] - original_img[h - 1, w]
 
-        img_gradient_diff_x.itemset(h, w, 128 + brightness_diff_x)
-        img_gradient_diff_y.itemset(h, w, 128 + brightness_diff_y)
+        img_gradient_diff_x.itemset(h, w, 0 + brightness_diff_x)
+        img_gradient_diff_y.itemset(h, w, 0 + brightness_diff_y)
 
         # Matrix operation using sobel filter (3 * 3)
         # Get pixel values from the original image for each axis
-        local_matrix_x = np.matrix([
+        local_matrix = np.matrix([
                                 [original_img[h - 1, w - 1], original_img[h, w - 1], original_img[h + 1, w - 1]],
                                 [original_img[h - 1, w], original_img[h, w], original_img[h + 1, w + 1]],
                                 [original_img[h - 1, w + 1], original_img[h + 1, w + 1], original_img[h + 1, w + 1]]])
 
-        local_matrix_y = np.matrix([
-                                [original_img[h - 1, w - 1], original_img[h - 1, w], original_img[h - 1, w + 1]],
-                                [original_img[h, w - 1], original_img[h, w], original_img[h, w + 1]],
-                                [original_img[h + 1, w - 1], original_img[h + 1, w], original_img[h + 1, w + 1]]])
-
         # Matrix operation
-        sobel_gx_local_matrix = np.dot(sobel_filter, local_matrix_x)
-        sobel_gy_local_matrix = np.dot(sobel_filter, local_matrix_y)
+        sobel_gx_local_matrix = np.matmul(sobel_filter_x, local_matrix)
+        sobel_gy_local_matrix = np.matmul(local_matrix, sobel_filter_y)
 
         # Save Image Gradient by pixel
         for i in range(h - 1, h + 1):
@@ -118,13 +114,13 @@ for h in range(0, height):
             smooth_img_xy.itemset(h, w, 255)
         else:
             smooth_img_xy.itemset(h, w, 0)
-
+''''''
 
 # UI
-images = [#original_img, img_gradient_diff_x, img_gradient_diff_y,
+images = [original_img, img_gradient_diff_x, img_gradient_diff_y,
           img_gradient_sobel_x, img_gradient_sobel_y, img_gradient_sobel_xy,
           smooth_img_x, smooth_img_y, smooth_img_xy]
-titles = [#'original', 'difference x', 'difference y',
+titles = ['original', 'difference x', 'difference y',
           'sobel x (3*3) th=154', 'sobel y (3*3) th=154', 'sobel xy (3*3) th=154',
           'smooth x th=154', 'smooth y th=154', 'smooth xy th=154']
 
