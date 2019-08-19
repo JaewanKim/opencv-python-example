@@ -10,7 +10,6 @@ class Main:
 
         self.img = './Image/lenna.png'
         self.original_img = cv2.imread(self.img, cv2.IMREAD_GRAYSCALE)
-        self.difference_of_gaussian_img = cv2.imread(self.img, cv2.IMREAD_GRAYSCALE)
 
         self.height = self.original_img.shape[0]
         self.width = self.original_img.shape[1]
@@ -24,6 +23,8 @@ class Main:
         return g / g.sum()
 
     def difference_of_gaussian(self, ksize, sigma1, sigma2):
+
+        difference_of_gaussian_img = cv2.imread(self.img, cv2.IMREAD_GRAYSCALE)
         gaussian_field = [[[0.0, 0.0] for col in range(self.width)] for row in range(self.height)]
 
         k = int(ksize)
@@ -37,7 +38,7 @@ class Main:
         for h in range(k, self.height-k):
             for w in range(k, self.width-k):
 
-                local_matrix = [[[0.0, 0.0] for i in range(0, 2 * k + 1)] for j in range(0, 2 * k + 1)]
+                local_matrix = [[[0, 0] for i in range(0, 2 * k + 1)] for j in range(0, 2 * k + 1)]
 
                 for i in range(0, 2*k+1):
                     for j in range(0, 2*k+1):
@@ -59,21 +60,26 @@ class Main:
 
         for h in range(k, self.height-k):
             for w in range(k, self.width-k):
-                self.difference_of_gaussian_img.itemset(h, w, gaussian_field[h][w][0] - gaussian_field[h][w][1])
+                difference_of_gaussian_img.itemset(h, w, gaussian_field[h][w][0] - gaussian_field[h][w][1])
+
+        return difference_of_gaussian_img
 
     def __main__(self):
 
-        self.difference_of_gaussian(1, 1.0, 1.5)
+        difference_of_gaussian1 = self.difference_of_gaussian(1, 1.0, 1.5)
+        difference_of_gaussian2 = self.difference_of_gaussian(1, 1.0, 2.0)
+        difference_of_gaussian3 = self.difference_of_gaussian(2, 1.0, 1.5)
+        difference_of_gaussian4 = self.difference_of_gaussian(2, 1.0, 2.0)
 
         # UI
-        images = [self.difference_of_gaussian_img]
-        titles = ['DoG']
+        images = [difference_of_gaussian1, difference_of_gaussian2, difference_of_gaussian3, difference_of_gaussian4]
+        titles = ['k1-1.0-1.5', 'k1-1.0-2.0', 'k2-1.0-1.5', 'k2-1.0-2.0']
 
-        for i in range(0, 1):
-            plt.subplot(1, 1, i + 1)
+        for i in range(0, 4):
+            plt.subplot(2, 2, i + 1)
             plt.imshow(images[i], cmap='gray', interpolation='bicubic'), plt.title([titles[i]])
             plt.xticks([]), plt.yticks([])
-        plt.savefig('./Output/DoGSelf/difference-of-gaussian-img-k1.png', bbox_inches='tight')
+        plt.savefig('./Output/DoGSelf/difference-of-gaussian-img.png', bbox_inches='tight')
         plt.show()
 
 
