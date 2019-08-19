@@ -27,7 +27,7 @@ class Main:
         gaussian_field = [[[0.0, 0.0] for col in range(self.width)] for row in range(self.height)]
 
         # Make the Gaussian by calling the function
-        k = 2
+        k = 1
         gaussian_kernel1 = self.gaussian_kernel(k, 1.0)
         gaussian_kernel2 = self.gaussian_kernel(k, 1.5)
 
@@ -66,7 +66,7 @@ class Main:
             plt.subplot(1, 1, i + 1)
             plt.imshow(images[i], cmap='gray', interpolation='bicubic'), plt.title([titles[i]])
             plt.xticks([]), plt.yticks([])
-        plt.savefig('./Output/DoGSelf/difference-of-gaussian-img.png', bbox_inches='tight')
+        plt.savefig('./Output/DoGSelf/difference-of-gaussian-img-k1.png', bbox_inches='tight')
         plt.show()
 
 
