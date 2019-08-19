@@ -23,13 +23,16 @@ class Main:
         g = np.exp(-(x ** 2 + y ** 2) / (2 * (sigma ** 2))) / (sigma ** 2 * (2 * math.pi))
         return g / g.sum()
 
-    def __main__(self):
+    def difference_of_gaussian(self, ksize, sigma1, sigma2):
         gaussian_field = [[[0.0, 0.0] for col in range(self.width)] for row in range(self.height)]
 
+        k = int(ksize)
+        sigma1 = float(sigma1)
+        sigma2 = float(sigma2)
+
         # Make the Gaussian by calling the function
-        k = 1
-        gaussian_kernel1 = self.gaussian_kernel(k, 1.0)
-        gaussian_kernel2 = self.gaussian_kernel(k, 1.5)
+        gaussian_kernel1 = self.gaussian_kernel(k, sigma1)
+        gaussian_kernel2 = self.gaussian_kernel(k, sigma2)
 
         for h in range(k, self.height-k):
             for w in range(k, self.width-k):
@@ -57,6 +60,10 @@ class Main:
         for h in range(k, self.height-k):
             for w in range(k, self.width-k):
                 self.difference_of_gaussian_img.itemset(h, w, gaussian_field[h][w][0] - gaussian_field[h][w][1])
+
+    def __main__(self):
+
+        self.difference_of_gaussian(1, 1.0, 1.5)
 
         # UI
         images = [self.difference_of_gaussian_img]
