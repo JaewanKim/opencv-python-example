@@ -7,7 +7,7 @@ import random
 class Main:
 
     def __init__(self):
-        img = './Image/butterfly.png'
+        img = './Image/lenna.png'
         self.original_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 
         self.height = self.original_img.shape[0]
@@ -106,8 +106,8 @@ class Main:
         # UI
         plt.subplot()
         plt.imshow(self.result_img, cmap='gray', interpolation='bicubic')
-        plt.title('lic test length3 ds0.5 noise220-255')
-        plt.savefig('lic-test-length3-ds0.5-noise220-255.png', bbox_inches='tight')
+        plt.title('lic test length3 ds1 noise220-255')
+        plt.savefig('lic-test-length3-ds1-noise220-255.png', bbox_inches='tight')
         plt.xticks([]), plt.yticks([])
         plt.show()
 
