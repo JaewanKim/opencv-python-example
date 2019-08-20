@@ -60,7 +60,7 @@ class Main:
         self.gradient_vector_field = self.image_gradient_sobel()
 
         length = 3
-        ds = 0.5
+        ds = 1
         for h in range(0, int(self.height)):
             for w in range(0, int(self.width)):
 
