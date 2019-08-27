@@ -8,7 +8,7 @@ class Main:
 
     def __init__(self):
 
-        self.img = './Image/lenna.png'
+        self.img = './Image/circle.jpg'
         self.original_img = cv2.imread(self.img, cv2.IMREAD_GRAYSCALE)
 
         self.height = self.original_img.shape[0]
@@ -79,7 +79,7 @@ class Main:
             plt.subplot(2, 2, i + 1)
             plt.imshow(images[i], cmap='gray', interpolation='bicubic'), plt.title([titles[i]])
             plt.xticks([]), plt.yticks([])
-        plt.savefig('./Output/DoGSelf/difference-of-gaussian-img.png', bbox_inches='tight')
+        plt.savefig('./Output/DoGSelf/difference-of-gaussian-circle.png', bbox_inches='tight')
         plt.show()
 
 
