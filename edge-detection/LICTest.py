@@ -1,4 +1,5 @@
 import cv2
+import math
 from matplotlib import pyplot as plt
 import numpy as np
 import random
@@ -21,7 +22,7 @@ class Main:
         # Create White Noise
         for h in range(0, self.height):
             for w in range(0, self.width):
-                self.noise_img[h, w] = random.randrange(220, 255)
+                self.noise_img[h, w] = random.randrange(0, 255)
 
     def image_gradient_sobel(self):
         # Image Gradient - Sobel
@@ -55,12 +56,28 @@ class Main:
 
         return sobel_gradient_vector_field
 
+    def rotate_field(self, vector_field, theta):
+        theta = theta / 180.0 * math.pi
+
+        rotated_field = [[[0, 0] for col in range(self.width)] for row in range(self.height)]
+
+        for h in range(0, self.height):
+            for w in range(0, self.width):
+                vx = vector_field[h][w][0]
+                vy = vector_field[h][w][1]
+                rotated_field[h][w][0] = vx * math.cos(theta) - vy * math.sin(theta)
+                rotated_field[h][w][1] = vx * math.sin(theta) + vy * math.cos(theta)
+
+        return rotated_field
+
     def __main__(self):
 
-        self.gradient_vector_field = self.image_gradient_sobel()
+        vector_field = self.image_gradient_sobel()
+        self.gradient_vector_field = self.rotate_field(vector_field, 90.0)
+        # self.gradient_vector_field = self.image_gradient_sobel()
 
         length = 3
-        ds = 1
+        ds = 3
         for h in range(0, int(self.height)):
             for w in range(0, int(self.width)):
 
@@ -78,6 +95,8 @@ class Main:
                         vector = self.gradient_vector_field[y][x]
 
                 vector = self.gradient_vector_field[h][w]
+                x = w
+                y = h
 
                 for s in range(-length, 0):
                     x = x - int(ds * vector[0])
@@ -87,28 +106,22 @@ class Main:
                         vector = self.gradient_vector_field[y][x]
 
                 # sum = compute_convolution(image, C)
-                texture: int = 0
-                weight: int = 0
                 tot: int = 0
                 for c in curve_list:
                     x = c[0]
                     y = c[1]
-                    texture += (int(self.noise_img[y][x]) * int(self.original_img[y][x]))
-                    weight += int(self.original_img[y][x])
+                    tot += self.noise_img[y][x]
 
-                    # set pixel p on O_img to sum
-                    if weight == 0:
-                        self.result_img.itemset(h, w, 0)
-                    else:
-                        tot += int(texture / weight)
-                        self.result_img.itemset(h, w, int(tot))
+                if len(curve_list) != 0:
+                    tot /= len(curve_list)
+                self.result_img.itemset(h, w, int(tot))
 
         # UI
         plt.subplot()
         plt.imshow(self.result_img, cmap='gray', interpolation='bicubic')
-        plt.title('lic test length3 ds1 noise220-255')
-        plt.savefig('lic-test-length3-ds1-noise220-255.png', bbox_inches='tight')
+        plt.title('lenna lic length3 ds3 r')
         plt.xticks([]), plt.yticks([])
+        plt.savefig('lenna-lic-length3-ds3-r.png', bbox_inches='tight')
         plt.show()
 
 
