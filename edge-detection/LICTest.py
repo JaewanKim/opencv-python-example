@@ -8,7 +8,7 @@ import random
 class Main:
 
     def __init__(self):
-        img = './Image/lenna.png'
+        img = './Image/grad2.png'
         self.original_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 
         self.height = self.original_img.shape[0]
@@ -51,8 +51,19 @@ class Main:
                         # print(gx, gy)
                         gx += np.asarray(sobel_gx_local_matrix)[i][j]
                         gy += np.asarray(sobel_gy_local_matrix)[i][j]
+                gx /= 9
+                gy /= 9
 
-                sobel_gradient_vector_field[h][w] = [gx/4, gy/4]
+                mg = math.sqrt(sobel_gradient_vector_field[h][w][0]**2 + sobel_gradient_vector_field[h][w][1]**2)
+
+                if mg == 0:
+                    mg = math.sqrt((255**2 + 255**2)) / 2
+                sobel_gradient_vector_field[h][w] = [gx / mg, gy / mg]
+
+                # if mg != 0:
+                #     sobel_gradient_vector_field[h][w] = [gx / mg, gy / mg]
+                # else:
+                #     sobel_gradient_vector_field[h][w] = [gx / 180, gy / 180]
 
         return sobel_gradient_vector_field
 
@@ -76,52 +87,77 @@ class Main:
         self.gradient_vector_field = self.rotate_field(vector_field, 90.0)
         # self.gradient_vector_field = self.image_gradient_sobel()
 
-        length = 3
-        ds = 3
+        length = 20
+        ds = 5
         for h in range(0, int(self.height)):
             for w in range(0, int(self.width)):
 
                 # array C = compute_integral_curve(p)
                 vector = self.gradient_vector_field[h][w]
 
-                x = w
-                y = h
+                x = float(w)
+                y = float(h)
                 curve_list = []
-                for s in range(0, length):
-                    x = x + int(ds * vector[0])
-                    y = y + int(ds * vector[1])
-                    if 0 <= x < self.width and 0 <= y < self.height:
+                weight_list = []
+                curve_list.append([x, y])
+                weight_list.append(length)
+
+                for s in range(1, length):
+                    x = x + ds * vector[0]
+                    y = y + ds * vector[1]
+                    if 0 <= int(x+0.5) < self.width and 0 <= int(y+0.5) < self.height:
                         curve_list.append([x, y])
-                        vector = self.gradient_vector_field[y][x]
+                        weight_list.append(length-s)
+                        vector = self.gradient_vector_field[int(y+0.5)][int(x+0.5)]
 
                 vector = self.gradient_vector_field[h][w]
-                x = w
-                y = h
+                # x = float(w)
+                # y = float(h)
 
                 for s in range(-length, 0):
-                    x = x - int(ds * vector[0])
-                    y = y - int(ds * vector[1])
-                    if 0 <= x < self.width and 0 <= y < self.height:
+                    x = x - ds * vector[0]
+                    y = y - ds * vector[1]
+                    if 0 <= int(x+0.5) < self.width and 0 <= int(y+0.5) < self.height:
                         curve_list.append([x, y])
-                        vector = self.gradient_vector_field[y][x]
+                        weight_list.append(length + s)
+                        vector = self.gradient_vector_field[int(y+0.5)][int(x+0.5)]
 
                 # sum = compute_convolution(image, C)
                 tot: int = 0
-                for c in curve_list:
-                    x = c[0]
-                    y = c[1]
-                    tot += self.noise_img[y][x]
+                #for c in curve_list:
+                #    x = int(c[0] + 0.5)
+                #    y = int(c[1] + 0.5)
+                #    tot += self.noise_img[y][x]
+
+                #if len(curve_list) != 0:
+                #    tot /= len(curve_list)
+
+                tot2: int = 0
+                for i in range(0, len(curve_list)):
+                    c = curve_list[i]
+                    weight = weight_list[i]
+                    x = int(c[0] + 0.5)
+                    y = int(c[1] + 0.5)
+                    tot += (self.noise_img[y][x] * weight)
+                    tot2 += weight
 
                 if len(curve_list) != 0:
-                    tot /= len(curve_list)
+                    tot /= tot2
+
                 self.result_img.itemset(h, w, int(tot))
+
+                # if x==100 and y==100:
+                #     for c in curve_list:
+                #         xx = int(c[0] + 0.5)
+                #         yy = int(c[1] + 0.5)
+                #         print(c[0], c[1], self.noise_img[yy][xx])
 
         # UI
         plt.subplot()
         plt.imshow(self.result_img, cmap='gray', interpolation='bicubic')
-        plt.title('lenna lic length3 ds3 r')
+        plt.title('grad2 lic length20 ds5 r')
         plt.xticks([]), plt.yticks([])
-        plt.savefig('lenna-lic-length3-ds3-r.png', bbox_inches='tight')
+        plt.savefig('grad2-lic-length20-ds5-r.png', bbox_inches='tight')
         plt.show()
 
 
