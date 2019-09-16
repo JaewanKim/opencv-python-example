@@ -8,21 +8,43 @@ import random
 class Main:
 
     def __init__(self):
-        img = './Image/grad2.png'
+        img = './Image/gradation3.png'
         self.original_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 
         self.height = self.original_img.shape[0]
         self.width = self.original_img.shape[1]
 
-        self.noise_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
         self.result_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 
         self.gradient_vector_field = [[[0, 0] for col in range(self.width)] for row in range(self.height)]
+        self.noise_field = [[0 for col in range(self.width)] for row in range(self.height)]
 
         # Create White Noise
         for h in range(0, self.height):
             for w in range(0, self.width):
-                self.noise_img[h, w] = random.randrange(0, 255)
+                self.noise_field[h][w] = random.randrange(0, 256)
+
+    def image_gradient(self):
+        gradient_vector_field = [[[0.0, 0.0] for col in range(self.width)] for row in range(self.height)]
+
+        for h in range(1, self.height-1):
+            for w in range(1, self.width - 1):
+                gradient_vector_field[h][w][0] = (float(self.original_img[h, w + 1]) - float(self.original_img[h, w - 1])) * 0.5
+                gradient_vector_field[h][w][1] = (float(self.original_img[h + 1, w]) - float(self.original_img[h - 1, w])) * 0.5
+
+        # for h in range(self.height):
+        #     for w in range(1, self.width - 1):
+        #         gradient_vector_field[h][w][0] = (float(self.original_img[h, w + 1]) - float(self.original_img[h, w - 1])) * 0.5
+        #     gradient_vector_field[h][0][0] = float(self.original_img[h, 1]) - float(self.original_img[h, 0])
+        #     gradient_vector_field[h][self.width - 1][0] = float(self.original_img[h, self.width - 1]) - float(self.original_img[h, self.width - 2])
+        #
+        # for w in range(self.width):
+        #     for h in range(1, self.height - 1):
+        #         gradient_vector_field[h][w][1] = (float(self.original_img[h + 1, w]) - float(self.original_img[h - 1, w])) * 0.5
+        #     gradient_vector_field[0][w][1] = float(self.original_img[1, w]) - float(self.original_img[0, w])
+        #     gradient_vector_field[self.height - 1][w][1] = float(self.original_img[self.height - 1, w]) - float(self.original_img[self.height - 2, w])
+
+        return gradient_vector_field
 
     def image_gradient_sobel(self):
         # Image Gradient - Sobel
@@ -48,22 +70,14 @@ class Main:
                 # Convolution
                 for i in range(0, 3):
                     for j in range(0, 3):
-                        # print(gx, gy)
                         gx += np.asarray(sobel_gx_local_matrix)[i][j]
                         gy += np.asarray(sobel_gy_local_matrix)[i][j]
                 gx /= 9
                 gy /= 9
 
-                mg = math.sqrt(sobel_gradient_vector_field[h][w][0]**2 + sobel_gradient_vector_field[h][w][1]**2)
-
-                if mg == 0:
-                    mg = math.sqrt((255**2 + 255**2)) / 2
-                sobel_gradient_vector_field[h][w] = [gx / mg, gy / mg]
-
-                # if mg != 0:
-                #     sobel_gradient_vector_field[h][w] = [gx / mg, gy / mg]
-                # else:
-                #     sobel_gradient_vector_field[h][w] = [gx / 180, gy / 180]
+                mg = math.sqrt(gx**2 + gy**2)
+                if mg != 0:
+                    sobel_gradient_vector_field[h][w] = [gx / mg, gy / mg]
 
         return sobel_gradient_vector_field
 
@@ -85,10 +99,9 @@ class Main:
 
         vector_field = self.image_gradient_sobel()
         self.gradient_vector_field = self.rotate_field(vector_field, 90.0)
-        # self.gradient_vector_field = self.image_gradient_sobel()
 
         length = 20
-        ds = 5
+        ds = 1
         for h in range(0, int(self.height)):
             for w in range(0, int(self.width)):
 
@@ -111,8 +124,6 @@ class Main:
                         vector = self.gradient_vector_field[int(y+0.5)][int(x+0.5)]
 
                 vector = self.gradient_vector_field[h][w]
-                # x = float(w)
-                # y = float(h)
 
                 for s in range(-length, 0):
                     x = x - ds * vector[0]
@@ -124,21 +135,13 @@ class Main:
 
                 # sum = compute_convolution(image, C)
                 tot: int = 0
-                #for c in curve_list:
-                #    x = int(c[0] + 0.5)
-                #    y = int(c[1] + 0.5)
-                #    tot += self.noise_img[y][x]
-
-                #if len(curve_list) != 0:
-                #    tot /= len(curve_list)
-
                 tot2: int = 0
                 for i in range(0, len(curve_list)):
                     c = curve_list[i]
                     weight = weight_list[i]
                     x = int(c[0] + 0.5)
                     y = int(c[1] + 0.5)
-                    tot += (self.noise_img[y][x] * weight)
+                    tot += (self.noise_field[y][x] * weight)
                     tot2 += weight
 
                 if len(curve_list) != 0:
@@ -146,11 +149,6 @@ class Main:
 
                 self.result_img.itemset(h, w, int(tot))
 
-                # if x==100 and y==100:
-                #     for c in curve_list:
-                #         xx = int(c[0] + 0.5)
-                #         yy = int(c[1] + 0.5)
-                #         print(c[0], c[1], self.noise_img[yy][xx])
 
         # UI
         plt.subplot()
