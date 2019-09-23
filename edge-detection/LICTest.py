@@ -1,222 +1,242 @@
 import cv2
+import math
 from matplotlib import pyplot as plt
 import numpy as np
-import math
 import random
 
 
-img = './Image/butterfly.png'
-original_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+class Main:
 
-height = original_img.shape[0]
-width = original_img.shape[1]
+    def __init__(self):
+        self.name = 'gradation3.png'
+        img = './Image/' + self.name
+        self.original_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 
-noise_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+        self.height = self.original_img.shape[0]
+        self.width = self.original_img.shape[1]
 
-gradient_vector_field = [[[0, 0] for col in range(width)] for row in range(height)]
-gradient_smooth_vector_field = [[[0, 0] for col2 in range(width)] for row2 in range(height)]
-C = []
+        self.result_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 
-sobel_filter_x = np.array([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]])
-sobel_filter_y = np.array([[-1, -2, -1], [0, 0, 0], [+1, +2, +1]])
+        self.gradient_vector_field = [[[0, 0] for col in range(self.width)] for row in range(self.height)]
+        self.noise_field = [[0 for col in range(self.width)] for row in range(self.height)]
 
-# Create White Noise
-for h in range(0, height):
-    for w in range(0, width):
-        noise_img[h, w] = random.randrange(0, 255)
+    def white_noise(self):
+        # Create White Noise
+        for h in range(0, self.height):
+            for w in range(0, self.width):
+                self.noise_field[h][w] = random.randrange(0, 256)
 
-# Image Gradient - Sobel
-max_vector_magnitude = 255 * math.sqrt(2)
-for h in range(1, height-1):
-    for w in range(1, width-1):
+    def image_gradient_dw(self):
+        gradient_vector_field = [[[0.0, 0.0] for col in range(self.width)] for row in range(self.height)]
 
-        # gx = original_img[h, w + 1] - original_img[h, w - 1]
-        # gy = original_img[h + 1, w] - original_img[h - 1, w]
+        for h in range(self.height):
+            for w in range(1, self.width - 1):
+                gradient_vector_field[h][w][0] = (float(self.original_img[h, w + 1]) - float(self.original_img[h, w - 1])) * 0.5
+            gradient_vector_field[h][0][0] = float(self.original_img[h, 1]) - float(self.original_img[h, 0])
+            gradient_vector_field[h][self.width - 1][0] = float(self.original_img[h, self.width - 1]) - float(self.original_img[h, self.width - 2])
 
-        local_matrix = np.array([
-            [original_img[h - 1, w - 1], original_img[h, w - 1], original_img[h + 1, w - 1]],
-            [original_img[h - 1, w], original_img[h, w], original_img[h + 1, w + 1]],
-            [original_img[h - 1, w + 1], original_img[h + 1, w + 1], original_img[h + 1, w + 1]]
-        ])
+        for w in range(self.width):
+            for h in range(1, self.height - 1):
+                gradient_vector_field[h][w][1] = (float(self.original_img[h + 1, w]) - float(self.original_img[h - 1, w])) * 0.5
+            gradient_vector_field[0][w][1] = float(self.original_img[1, w]) - float(self.original_img[0, w])
+            gradient_vector_field[self.height - 1][w][1] = float(self.original_img[self.height - 1, w]) - float(self.original_img[self.height - 2, w])
 
-        gx_local_matrix = np.matmul(sobel_filter_x, local_matrix)
-        gy_local_matrix = np.matmul(local_matrix, sobel_filter_y)
+        return gradient_vector_field
 
-        gx = np.asarray(gx_local_matrix)[1][1]
-        gy = np.asarray(gy_local_matrix)[1][1]
+    def image_gradient(self):
+        gradient_vector_field = [[[0.0, 0.0] for col in range(self.width)] for row in range(self.height)]
 
-        gradient_vector_field[h][w][0] = gx / max_vector_magnitude
-        gradient_vector_field[h][w][1] = gy / max_vector_magnitude
-
-# Smoothing
-for h in range(1, height - 1):
-    for w in range(1, width - 1):
-
-        gradient_avg_x = 0
-        gradient_avg_y = 0
-
-        # Get Average Vector
-        for i in range(h - 1, h + 1):
-            for j in range(w - 1, w + 1):
-                gradient_avg_x += gradient_vector_field[h][w][0]
-                gradient_avg_y += gradient_vector_field[h][w][1]
-
-        gradient_avg_x /= 9
-        gradient_avg_y /= 9
-
-        gradient_smooth_vector_field[h][w] = [gradient_avg_y, gradient_avg_x]
-
-# result = lic_flow(gradient_smooth_vector_field)
-vectors = gradient_smooth_vector_field
-vectors = np.asarray(vectors)
-len_pix = 10
-m, n, two = vectors.shape
-if two != 2:
-    raise ValueError
-
-
-empty_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-result = np.zeros((2*len_pix+1, m, n, 2), dtype=np.int16)   # FIXME: int16?
-center = len_pix
-result[center, :, :, 0] = np.arange(m)[:, np.newaxis]
-result[center, :, :, 1] = np.arange(n)[np.newaxis, :]
-
-for i in range(m):
-    # print(i, '/', m)
-    for j in range(n):
-        y = i
-        x = j
-        fx = 0.5
-        fy = 0.5
-        for k in range(len_pix):
-            vx, vy = vectors[y, x]
-            # print(x, y, vx, vy)
-            if vx == 0:
-                pass
-            if vy == 0:
-                pass
-            if vx > 0:
-                tx = (1-fx)/vx
-            else:
-                tx = -fx/vx
-            if vy > 0:
-                ty = (1-fy)/vy
-            else:
-                ty = -fy/vy
-            if tx < ty:
-                # print("x step")
-                if vx > 0:
-                    x += 1
-                    fy += vy*tx
-                    fx = 0.
+        for h in range(0, self.height):
+            for w in range(0, self.width):
+                if h == 0:
+                    gradient_vector_field[h][w][1] = float(self.original_img[h + 1, w]) - float(self.original_img[h, w])
+                elif w == 0:
+                    gradient_vector_field[h][w][0] = float(self.original_img[h, w + 1]) - float(self.original_img[h, w])
+                elif h == (self.height - 1):
+                    gradient_vector_field[h][w][1] = float(self.original_img[h, w]) - float(self.original_img[h - 1, w])
+                elif w == (self.width - 1):
+                    gradient_vector_field[h][w][0] = float(self.original_img[h, w]) - float(self.original_img[h, w - 1])
                 else:
-                    x -= 1
-                    fy += vy*tx
-                    fx = 1.
-            else:
-                # print("y step")
-                if vy > 0:
-                    y += 1
-                    fx += vx*ty
-                    fy = 0.
-                else:
-                    y -= 1
-                    fx += vx*ty
-                    fy = 1.
-            if x < 0:
-                x = 0
-            if y < 0:
-                y = 0
-            if x >= n:
-                x = n-1
-            if y >= m:
-                y = m-1
+                    gradient_vector_field[h][w][0] = (float(self.original_img[h, w + 1]) - float(self.original_img[h, w - 1])) * 0.5
+                    gradient_vector_field[h][w][1] = (float(self.original_img[h + 1, w]) - float(self.original_img[h - 1, w])) * 0.5
 
-            # empty_img.itemset(i, j, math.sqrt(math.pow(y, 2) + math.pow(x, 2)))
-            result[center+k+1, i, j, :] = y, x
-# print(result)
-#
-for h in range(0, height):
-    for w in range(0, width):
-        for k in range(0, 21):
-            dx = result[k][h][w][0]
-            dy = result[k][h][w][1]
-            empty_img.itemset(h, w, math.sqrt(math.pow(dy, 2) + math.pow(dx, 2)))
+        return gradient_vector_field
 
-plt.subplot()
-plt.imshow(empty_img, cmap='gray', interpolation='bicubic')
-plt.title('lic test')
-plt.xticks([]), plt.yticks([])
-plt.show()
+    def image_gradient_sobel(self):
+        # Image Gradient - Sobel
+        sobel_gradient_vector_field = [[[0.0, 0.0] for col in range(self.width)] for row in range(self.height)]
 
-'''
-# LIC implemented
-empty_img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-L = 1
-ds = 1
-for h in range(0, height):
-    print(h)
-    for w in range(0, width):
+        sobel_filter_x = np.array([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]])
+        sobel_filter_y = np.array([[-1, -2, -1], [0, 0, 0], [+1, +2, +1]])
 
-        # array C = compute_integral_curve(p)
-        V = gradient_vector_field[h][w]
-        x = w
-        y = h
-        for s in range(0, L):
-            x = x + (int)(ds*V[0])
-            y = y + (int)(ds*V[1])
-            C.append([x, y])
-            V = gradient_vector_field[y][x]
+        for h in range(1, self.height - 1):
+            for w in range(1, self.width - 1):
 
-        V = gradient_vector_field[h][w]
+                local_matrix = np.array([
+                    [self.original_img[h - 1, w - 1], self.original_img[h, w - 1], self.original_img[h + 1, w - 1]],
+                    [self.original_img[h - 1, w], self.original_img[h, w], self.original_img[h + 1, w + 1]],
+                    [self.original_img[h - 1, w + 1], self.original_img[h + 1, w + 1], self.original_img[h + 1, w + 1]]
+                ])
 
-        for s in range(0, -L):
-            x = x - (int)(ds*V[0])
-            y = y - (int)(ds*V[1])
-            C.append([x, y])
-            V = gradient_vector_field[y][x]
+                sobel_gx_local_matrix = np.matmul(sobel_filter_x, local_matrix)
+                sobel_gy_local_matrix = np.matmul(local_matrix, sobel_filter_y)
+                gx = 0
+                gy = 0
 
-        # sum = compute_convolution(image, C)
-        tot = 0
-        for c in C:
-            x = c[0]
-            y = c[1]
-            tot += original_img[y][x]
-        tot = tot / (2 * L + 1)
+                # Convolution
+                for i in range(0, 3):
+                    for j in range(0, 3):
+                        gx += np.asarray(sobel_gx_local_matrix)[i][j]
+                        gy += np.asarray(sobel_gy_local_matrix)[i][j]
+                gx /= 9
+                gy /= 9
 
-        # set pixel p on O_img to sum
-        empty_img.itemset(h, w, tot)
+                mg = math.sqrt(gx**2 + gy**2)
+                if mg != 0:
+                    sobel_gradient_vector_field[h][w] = [gx / mg, gy / mg]
 
-plt.subplot()
-plt.imshow(empty_img, cmap='gray', interpolation='bicubic')
-plt.title('lic test')
-plt.xticks([]), plt.yticks([])
-plt.show()
-'''
-'''
-# UI
-X, Y = np.meshgrid(np.arange(0, width), np.arange(0, height))
-Xs, Ys = np.meshgrid(np.arange(0, width), np.arange(0, height))
-x_shape = X.shape
+        return sobel_gradient_vector_field
 
-U = np.zeros(x_shape)
-V = np.zeros(x_shape)
+    def rotate_field(self, vector_field, theta):
+        theta = theta / 180.0 * math.pi
 
-for h in range(1, height-1):
-    for w in range(1, width-1):
-        U[w, h] = gradient_vector_field[h][w][0]
-        V[w, h] = gradient_vector_field[h][w][1]
-        # U[w, h] = gradient_smooth_vector_field[h][w][0]
-        # V[w, h] = gradient_smooth_vector_field[h][w][1]
+        rotated_field = [[[0, 0] for col in range(self.width)] for row in range(self.height)]
 
-fig, ax = plt.subplots()
-q = ax.quiver(X, Y, U, V, units='xy', scale=0.1, color='black')
-plt.grid()
-ax.set_aspect('equal')
+        for h in range(0, self.height):
+            for w in range(0, self.width):
+                vx = vector_field[h][w][0]
+                vy = vector_field[h][w][1]
+                rotated_field[h][w][0] = vx * math.cos(theta) - vy * math.sin(theta)
+                rotated_field[h][w][1] = vx * math.sin(theta) + vy * math.cos(theta)
 
-plt.xlim(0, width), plt.ylim(0, height)
-plt.title('non-smooth', fontsize=10), plt.savefig('sobel-non-sobel-smooth.png', bbox_inches='tight')
-# plt.title('smooth', fontsize=10), plt.savefig('sobel-smooth.png', bbox_inches='tight')
+        return rotated_field
 
-plt.show()
-'''
+    @staticmethod
+    def gaussian_weight(length, sigma=None):
+        length = int(length)
+        if sigma is None:
+            sigma = 1.0
+        w = np.mgrid[-length:length + 1]
+        g = np.exp(-(w ** 2) / (2 * (sigma ** 2))) / (sigma ** 2 * (2 * math.pi))
+        return g / g.sum()
+
+    def lic(self, length, ds):
+
+        for h in range(0, int(self.height)):
+            for w in range(0, int(self.width)):
+
+                # array C = compute_integral_curve(p)
+                vector = self.gradient_vector_field[h][w]
+
+                x = float(w)
+                y = float(h)
+                curve_list = []
+                weight_list = []
+                curve_list.append([x, y])
+                weight_list.append(length)
+
+                for s in range(1, length):
+                    x = x + ds * vector[0]
+                    y = y + ds * vector[1]
+                    if 0 <= int(x+0.5) < self.width and 0 <= int(y+0.5) < self.height:
+                        curve_list.append([x, y])
+                        weight_list.append(length-s)
+                        vector = self.gradient_vector_field[int(y+0.5)][int(x+0.5)]
+
+                vector = self.gradient_vector_field[h][w]
+
+                for s in range(-length, 0):
+                    x = x - ds * vector[0]
+                    y = y - ds * vector[1]
+                    if 0 <= int(x+0.5) < self.width and 0 <= int(y+0.5) < self.height:
+                        curve_list.append([x, y])
+                        weight_list.append(length + s)
+                        vector = self.gradient_vector_field[int(y+0.5)][int(x+0.5)]
+
+                # sum = compute_convolution(image, C)
+                tot: int = 0
+                tot2: int = 0
+                for i in range(0, len(curve_list)):
+                    c = curve_list[i]
+                    weight = weight_list[i]
+                    x = int(c[0] + 0.5)
+                    y = int(c[1] + 0.5)
+                    tot += (self.noise_field[y][x] * weight)
+                    tot2 += weight
+
+                if len(curve_list) != 0:
+                    tot /= tot2
+
+                self.result_img.itemset(h, w, int(tot))
+
+    def lic_gaussain(self, length, ds):
+        weight_list = self.gaussian_weight(length, 5)
+
+        for h in range(0, int(self.height)):
+            for w in range(0, int(self.width)):
+
+                # array C = compute_integral_curve(p)
+                vector = self.gradient_vector_field[h][w]
+
+                x = float(w)
+                y = float(h)
+                curve_list = []
+                curve_list.append([x, y])
+
+                for s in range(1, length):
+                    x = x + ds * vector[0]
+                    y = y + ds * vector[1]
+                    if 0 <= int(x+0.5) < self.width and 0 <= int(y+0.5) < self.height:
+                        curve_list.append([x, y])
+                        vector = self.gradient_vector_field[int(y+0.5)][int(x+0.5)]
+
+                vector = self.gradient_vector_field[h][w]
+
+                for s in range(-length, 0):
+                    x = x - ds * vector[0]
+                    y = y - ds * vector[1]
+                    if 0 <= int(x+0.5) < self.width and 0 <= int(y+0.5) < self.height:
+                        curve_list.append([x, y])
+                        vector = self.gradient_vector_field[int(y+0.5)][int(x+0.5)]
+
+                # sum = compute_convolution(image, C)
+                tot: int = 0
+                tot2: int = 0
+                for i in range(0, len(curve_list)):
+                    c = curve_list[i]
+                    weight = weight_list[i]
+                    x = int(c[0] + 0.5)
+                    y = int(c[1] + 0.5)
+                    tot += (self.noise_field[y][x] * weight)
+                    tot2 += weight
+
+                if len(curve_list) != 0:
+                    tot /= tot2
+
+                self.result_img.itemset(h, w, int(tot))
+
+    def __main__(self):
+
+        self.white_noise()
+        vector_field = self.image_gradient()
+        # vector_field = self.image_gradient_sobel()
+        self.gradient_vector_field = self.rotate_field(vector_field, 90.0)
+
+        length = 20
+        ds = 1
+        # self.lic(length, ds)
+        self.lic_gaussain(length, ds)
+
+        file_name = 'lic-weightGaussian-length' + str(length) + '-ds' + str(ds) + '-' + self.name
+
+        # UI
+        plt.subplot()
+        plt.imshow(self.result_img, cmap='gray', interpolation='bicubic')
+        plt.title(file_name)
+        plt.xticks([]), plt.yticks([])
+        plt.savefig(file_name, bbox_inches='tight')
+        plt.show()
+
+
+if __name__ == '__main__':
+    Main().__main__()
