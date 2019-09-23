@@ -185,39 +185,26 @@ class Main:
     def sobel_smoothing(self, vector_field):
 
         smooth_vector_field = [[[0.0, 0.0] for col in range(self.width)] for row in range(self.height)]
-        # local_matrix = [[[0.0, 0.0] for col in range(3)] for row in range(3)]
 
         smooth_vector_field = np.asarray(smooth_vector_field)
 
         for h in range(1, self.height - 1):
             for w in range(1, self.width - 1):
 
-                avg = [0.0, 0.0]
+                avg_x = 0
+                avg_y = 0
                 for i in range(-1, 2):
                     for j in range(-1, 2):
-                        avg += smooth_vector_field[h + i][w + j]
-                avg /= 9
-
-                # smooth_vector_field[h][w] = avg
-                #
-                # local_matrix = np.array([
-                #     [smooth_vector_field[h - 1, w - 1], smooth_vector_field[h, w - 1], smooth_vector_field[h + 1, w - 1]],
-                #     [smooth_vector_field[h - 1, w], smooth_vector_field[h, w], smooth_vector_field[h + 1, w + 1]],
-                #     [smooth_vector_field[h - 1, w + 1], smooth_vector_field[h + 1, w + 1], smooth_vector_field[h + 1, w + 1]]
-                # ])
-                # avgx = 0
-                # avgy = 0
-                # for i in range(0, 3):
-                #     for j in range(0, 3):
-                #         avgx += local_matrix[i][j]
-                #         avgy += local_matrix[i][j]
-                # avgx /= 9
-                # avgy /= 9
+                        avg_x += vector_field[h + i][w + j][0]
+                        avg_y += vector_field[h + i][w + j][1]
+                avg_x /= 9
+                avg_y /= 9
+                smooth_vector_field[h][w] = [avg_x, avg_y]
 
         return smooth_vector_field
 
     def lic_gaussain(self, length, ds):
-        weight_list = self.gaussian_weight(length)
+        weight_list = self.gaussian_weight(length, 5)
 
         for h in range(0, int(self.height)):
             for w in range(0, int(self.width)):
@@ -269,14 +256,15 @@ class Main:
         self.white_noise()
         # vector_field = self.image_gradient()
         vector_field = self.image_gradient_sobel()
-        self.gradient_vector_field = self.rotate_field(vector_field, 90.0)
+        smooth_vector_field = self.sobel_smoothing(vector_field)
+        self.gradient_vector_field = self.rotate_field(smooth_vector_field, 90.0)
 
         length = 20
-        ds = 3
-        # self.lic(length, ds)
-        self.lic_gaussain(length, ds)
+        ds = 1
+        self.lic(length, ds)
+        # self.lic_gaussain(length, ds)
 
-        file_name = 'lic-rk-smooth-sobel-weightGaussian-length' + str(length) + '-ds' + str(ds) + '-' + self.name
+        file_name = 'lic-rk-smooth-sobel-weightAvg-length' + str(length) + '-ds' + str(ds) + '-' + self.name
 
         # UI
         plt.subplot()

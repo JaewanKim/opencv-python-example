@@ -170,7 +170,7 @@ class Main:
                 self.result_img.itemset(h, w, int(tot))
 
     def lic_gaussain(self, length, ds):
-        weight_list = self.gaussian_weight(length)
+        weight_list = self.gaussian_weight(length, 5)
 
         for h in range(0, int(self.height)):
             for w in range(0, int(self.width)):
