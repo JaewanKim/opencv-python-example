@@ -88,13 +88,31 @@ class Main:
                 gx /= 9
                 gy /= 9
 
-                if gx == 0.0 and gy == 0.0:
-                    gx = 1.0
 
                 # mg = math.sqrt(gx ** 2 + gy ** 2)
                 # if mg != 0:
                 #     sobel_gradient_vector_field[h][w] = [gx / mg, gy / mg]
                 sobel_gradient_vector_field[h][w] = [gx, gy]
+
+        coordlist = []
+        for j in range(-10, 11):
+            for i in range(-10, 11):
+                coordlist.append((i, j))
+
+        for j in range(len(coordlist) - 1, 1, -1):
+            for i in range(0, j - 1):
+                if coordlist[i][0] ** 2 + coordlist[i][1] ** 2 > coordlist[i + 1][0] ** 2 + coordlist[i + 1][1] ** 2:
+                    coordlist[i], coordlist[i + 1] = coordlist[i + 1], coordlist[i]
+
+        for h in range(1, self.height - 1):
+            for w in range(1, self.width - 1):
+                if sobel_gradient_vector_field[h][w][0] == 0.0 and sobel_gradient_vector_field[h][w][1] == 0.0:
+                    for temp in coordlist:
+                        if (0 < w + temp[0] <self.width -1) and (0 < h + temp[1] <self.height -1):
+                            if sobel_gradient_vector_field[h][w + temp[0]][0] != 0 and sobel_gradient_vector_field[h + temp[1]][w][1] != 0:
+                                sobel_gradient_vector_field[h][w][0] = sobel_gradient_vector_field[h][w + temp[0]][0]
+                                sobel_gradient_vector_field[h][w][1] = sobel_gradient_vector_field[h + temp[1]][w][1]
+                                break
 
         return sobel_gradient_vector_field
 
@@ -307,8 +325,6 @@ class Main:
                 t_new = [0.0, 0.0]
                 k = 0.0
 
-                if (h == 5 and w == 97):
-                    print()
 
                 # Eq(1)
                 for r in range(h - ksize, h + ksize):
@@ -324,38 +340,25 @@ class Main:
                         t_new[1] += phi * t_cur_y[1] * ws * wm * wd
                         k += phi * ws * wm * wd
 
-                ''' t_new를 normalize 한다 ! '''
-                # print(type(t_new[0]))
-                # print(type(k))
                 tx = float(t_new[0])
                 ty = float(t_new[1])
-
-                if (k==0):
-                    print(h, w)
-
                 tx /= k
                 ty /= k
-                # refined_field[h][w][0] = t_new[0]
-                # refined_field[h][w][1] = t_new[1]
                 refined_field[h][w][0] = tx
                 refined_field[h][w][1] = ty
 
         return refined_field
 
     def __main__(self):
-        # JUST 1 ITERATION FOR TEST
-
         self.white_noise()
         self.init_ETF()
-        field = self.refine_ETF(5)
-        field2 = self.refine_ETF(5, field)
-        field3 = self.refine_ETF(5, field2)
-        self.gradient_vector_field = self.refine_ETF(5, field3)
+        self.gradient_vector_field = self.refine_ETF(5)
 
         # self.gradient_vector_field   # refine 두세번째에 여기 대입
-
-        self.lic(30, 1)
-        file_name = 'ETF-Test4-' + self.name
+        length = 20
+        ds = 0.25
+        self.lic(length, ds)
+        file_name = 'ETF-2-length' + str(length) + '-ds' + str(ds) + '-' + self.name
 
         # UI
         plt.subplot()
